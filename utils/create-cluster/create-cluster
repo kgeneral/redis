@@ -26,6 +26,13 @@ then
         PORT=$((PORT+1))
         echo "Starting $PORT"
         ../../src/redis-server --port $PORT  --protected-mode $PROTECTED_MODE --cluster-enabled yes --cluster-config-file nodes-${PORT}.conf --cluster-node-timeout $TIMEOUT --appendonly yes --appendfilename appendonly-${PORT}.aof --dbfilename dump-${PORT}.rdb --logfile ${PORT}.log --daemonize yes ${ADDITIONAL_OPTIONS}
+
+        # start / stop scripts for each node (for failover testing)
+        echo -e "#!/bin/bash\n../../src/redis-server --port $PORT  --protected-mode $PROTECTED_MODE --cluster-enabled yes --cluster-config-file nodes-${PORT}.conf --cluster-node-timeout $TIMEOUT --appendonly yes --appendfilename appendonly-${PORT}.aof --dbfilename dump-${PORT}.rdb --logfile ${PORT}.log --daemonize yes ${ADDITIONAL_OPTIONS}" > ./_start_node_$PORT.sh
+        chmod +x ./_start_node_$PORT.sh
+
+        echo -e "#!/bin/bash\n../../src/redis-cli -p $PORT shutdown nosave" > ./_stop_node_$PORT.sh
+        chmod +x ./_stop_node_$PORT.sh
     done
     exit 0
 fi
@@ -92,6 +99,8 @@ then
     rm -rf appendonly*.aof
     rm -rf dump*.rdb
     rm -rf nodes*.conf
+    rm -rf _start_node*.sh
+    rm -rf _stop_node*.sh
     exit 0
 fi
 
